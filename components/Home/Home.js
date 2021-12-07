@@ -14,27 +14,34 @@ import {
 
 const Home = ({ navigation, props }) => {
   const [pokemon, setPokemon] = useState(null);
-  const [pokemonName, setPokemonName] = useState("");
   const [pokemons, setPokemons] = useState(null);
-  const [error, setError] = useState(null);
 
   useEffect(async () => {
-    // fetch("https://pokeapi.co/api/v2/pokemon/")
-    //   .then((response) => response.json())
-    //   .then((json) => {
-    //     console.log(json.results);
-    //     setPokemons(json.results);
-    //   })
-    //   .catch((error) => console.error(error));
     console.log(props);
     getPokemons();
   }, []);
 
-  const Item = ({ name }) => (
-    <View>
-      <Text>Nombre: {name}</Text>
-    </View>
-  );
+  const next = async (pokemons) => {
+    try {
+      console.log(pokemons);
+      const response = await fetch(pokemons.next);
+      const json = await response.json();
+      setPokemons(json);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const previous = async (pokemons) => {
+    try {
+      console.log(pokemons);
+      const response = await fetch(pokemons.previous);
+      const json = await response.json();
+      setPokemons(json);
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   const getPokemon = async (name) => {
     try {
@@ -54,7 +61,7 @@ const Home = ({ navigation, props }) => {
     try {
       const response = await fetch("https://pokeapi.co/api/v2/pokemon");
       const json = await response.json();
-      setPokemons(json.results);
+      setPokemons(json);
     } catch (error) {
       console.error(error);
     }
@@ -62,47 +69,46 @@ const Home = ({ navigation, props }) => {
 
   return (
     <SafeAreaView>
-      <ScrollView style={{ flex: 1 }}>
-        <TextInput
-          style={styles.inputPokemon}
-          onChangeText={(value) => setPokemonName(value)}
-          value={pokemonName}
-          placeholder={"Escribi el nombre de un pokemon"}
-        />
-        <Button
-          style={styles.botonBuscar}
-          onPress={() => {
-            getPokemon(pokemonName);
-          }}
-          title="Buscar pokemon"
-        />
-        {pokemon != null ? (
-          <View style={styles.container}>
-            <Text>{"Nombre: " + pokemon.name}</Text>
-            <Text>{"Altura: " + pokemon.height}</Text>
-            <Text>{"Peso: " + pokemon.weight}</Text>
-            <Button
-              title="Ver más"
-              onPress={() =>
-                navigation.navigate("Pokemon", { pokemon: pokemon })
-              }
-            />
-          </View>
-        ) : null}
-
-        <Text>{error != null ? "ERROR:" + error : null}</Text>
-      </ScrollView>
       {pokemons != null ? (
         <FlatList
           style={{
             marginVertical: 15,
           }}
-          data={pokemons}
+          data={pokemons.results}
           keyExtractor={({ id }, index) => id}
           renderItem={({ item }) => (
             <Text style={styles.item} onPress={() => getPokemon(item.name)}>
               Name: {item.name.charAt(0).toUpperCase() + item.name.slice(1)}
             </Text>
+          )}
+          ListHeaderComponent={() => (
+            <View
+              style={{
+                felx: 1,
+                flexDirection: "row",
+                alignContent: "center",
+                justifyContent: "space-between",
+                padding: 20,
+                margin: 10,
+              }}
+            >
+              <Button
+                style={styles.botonBuscar}
+                onPress={() => {
+                  previous(pokemons);
+                }}
+                title="Previous"
+                disabled={pokemons.previous == null}
+              />
+              <Button
+                style={styles.botonBuscar}
+                onPress={() => {
+                  next(pokemons);
+                }}
+                title="Next"
+                disabled={pokemons.next == null}
+              />
+            </View>
           )}
         />
       ) : null}
@@ -112,18 +118,8 @@ const Home = ({ navigation, props }) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: "center", alignItems: "center" },
-  botonBuscar: {},
-  inputPokemon: {
-    height: 40,
-    borderColor: "gray",
-    borderWidth: 1,
-    margin: 20,
-    padding: 10,
-    textAlign: "center",
-  },
-  logo: {
-    width: 132,
-    height: 126,
+  botonBuscar: {
+    width: "100px",
   },
   item: {
     padding: 10,
